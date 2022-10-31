@@ -88,8 +88,7 @@ songplay_table_insert = ("""
       location,                             
       user_agent
       ) 
-    VALUES ( %s, %s, %s, %s, %s, %s, %s, %s)
-    ON CONFLICT (song_id) DO NOTHING;
+    VALUES ( %s, %s, %s, %s, %s, %s, %s, %s);
 """)
 
 user_table_insert = ("""
