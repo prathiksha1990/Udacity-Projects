@@ -62,7 +62,7 @@ songplay_table_create = ("""
     (
     
         songplay_id SERIAL PRIMARY KEY, 
-        start_time NOT NULL TIMESTAMP REFERENCES time(start_time), 
+        start_time TIMESTAMP NOT NULL REFERENCES time(start_time), 
         user_id int NOT NULL REFERENCES users(user_id), 
         level text, 
         song_id text REFERENCES songs(song_id), 
