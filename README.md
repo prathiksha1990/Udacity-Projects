@@ -1,4 +1,4 @@
-# Sparkify Postgres ET
+# Sparkify Postgres ETL
 
 ## Context
 
