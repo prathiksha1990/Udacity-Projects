@@ -3,8 +3,11 @@ from datetime import datetime
 import os
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import udf, col
-from pyspark.sql.functions import year, month, dayofmonth, hour, weekofyear, date_format
-
+from pyspark.sql.functions import week,year, month, dayofmonth, hour, weekofyear, date_format
+from pyspark.sql.types import StructType as R, StructField as Fld, DoubleType as Dbl, \
+                                StringType as Str, IntegerType as Int, DateType as Dat, \
+                                TimestampType
+from pyspark.sql.functions import to_timestamp as ti
 
 config = configparser.ConfigParser()
 config.read('dl.cfg')
@@ -32,7 +35,7 @@ def process_song_data(spark, input_data, output_data):
     
     """
     # get filepath to song data file
-    song_data = input_data + song_data/*/*/*/*.json
+    song_data = input_data + 'song_data/*/*/*/*.json'
     
      #define the song schema
     songSchema = R([
@@ -43,6 +46,7 @@ def process_song_data(spark, input_data, output_data):
         Fld("artist_name",Str()),
         Fld("duration",Dbl()),
         Fld("num_songs",Int()),
+        Fld("song_id",Str()),
         Fld("title",Str()),
         Fld("year",Int()),
     ])
@@ -51,9 +55,8 @@ def process_song_data(spark, input_data, output_data):
     df = spark.read.json(song_data, schema=songSchema)
 
     # extract columns to create songs table
-    songs_columns = ["title", "artist_id","year","duration"]
-    songs_table = df.select(song_columns).dropDuplicates().\
-    withColumn("song_id",monotonically_increasing_id())
+    songs_columns = ["song_id","title", "artist_id","year","duration"]
+    songs_table = df.select(song_columns).dropDuplicates(["song_id"])
     
     # write songs table to parquet files partitioned by year and artist
     songs_table.write.partitionBy("year","artist_id").parquet(output_data + 'songs/')
@@ -61,7 +64,7 @@ def process_song_data(spark, input_data, output_data):
     # extract columns to create artists table
     artists_columns = ["artist_id", "artist_name as name", "artist_location as location",\
                        "artist_latitude as latitude", "artist_longitude as longitude"]
-    artists_table = df.selectExpr(artists_columns).dropDuplicates()
+    artists_table = df.selectExpr(artists_columns).dropDuplicates(["artist_id"])
     
     # write artists table to parquet files
     artists_table.write.parquet(output_data + 'artists/')
@@ -88,17 +91,17 @@ def process_log_data(spark, input_data, output_data):
 
     # extract columns for users table  
     user_columns = ["userId", "firstName","lastName","gender","level"]
-    user_table = df.selectExpr(user_columns).dropDuplicates() 
+    user_table = df.selectExpr(user_columns).dropDuplicates(["userId"])
     
     # write users table to parquet files
     user_table.write.parquet(output_data + 'users/')
 
     # create timestamp column from original timestamp column
-    df = df = df.withColumn("start_time", (col("ts")/1000).cast("timestamp"))
+    df = df.withColumn("start_time", (col("ts")/1000).cast("timestamp"))
     
     # extract columns to create time table
 
-    time_table = df.select("start_time").dropDuplicates() \
+    time_table = df.select("start_time").dropDuplicates(["start_time"]) \
             .withColumn("hour", hour(col("start_time"))) \
             .withColumn("day", date_format(col("start_time"), "d")) \
             .withColumn("week", weekofyear(col("start_time"))) \
